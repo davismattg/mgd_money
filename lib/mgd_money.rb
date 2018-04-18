@@ -13,13 +13,17 @@ class MGDMoney
   attr_reader :amount, :currency                                                                    # each MGDMoney object will have these attributes
 
   # instantiate new MGDMoney objects.
-  # @param [Numeric] amount, the amount of the given currency
-  # @param [String] currency, the user-defined currency string
+  # @param [Numeric] amount the amount of the given currency
+  # @param [String] currency the user-defined currency string
   # @return [MGDMoney] the resulting MGDMoney object
-  # @example fifty_eur = MGDMoney.new(50, 'EUR') #=> 50 EUR
+  # @example fifty_eur = MGDMoney.new(50, 'EUR') => 50.00 EUR
   def initialize(amount, currency)
     unless amount.is_a?(Numeric)                                                                    # the amount entered wasn't empty, but we still have to make sure it's a number
-      raise UnknownObjectError, 'Amount must be a number'
+      raise InvalidDeclarationError, 'Amount must be a number'
+    end
+    
+    unless currency.is_a?(String)                                                                   # the currency entered wasn't a string
+      raise InvalidDeclarationError, 'Currency must be a string'
     end
 
     if currency.empty?
@@ -31,15 +35,33 @@ class MGDMoney
   end
 
   # configure the currency rates on the singleton class with respect to a base currency
-  # @param [String] base_currency, the currency used to determine conversion rates
-  # @param [Hash] conversion_factors, the conversion rates for supported currencies
+  # @param [String] base_currency the currency used to determine conversion rates
+  # @param [Hash] conversion_factors the conversion rates for supported currencies
   # @return [nil]
-  # @example
-  # MGDMoney.conversion_rates("EUR", {
-  #    "USD" => 1.11,
-  #    "Bitcoin" => 0.0047
-  # })
+  # @example MGDMoney.conversion_rates("EUR", {
+  #                 "USD" => 1.11,
+  #                 "Bitcoin" => 0.0047
+  #             })
   def self.conversion_rates(base_currency, conversion_factors)
+    unless base_currency.is_a?(String)                                                              # check the base currency is a string
+        raise InvalidConversionDeclarationError, 'Currency must be a string'
+    end
+    
+    unless conversion_factors.is_a?(Hash)                                                           # check the rates were specified as a hash
+        raise InvalidConversionDeclarationError, 'Conversion rates not specified'
+    end
+    
+    # check that the users supplied the currency as a string, and the conversion rate as a number
+    conversion_factors.each do |key, value|
+        unless key.is_a?(String) 
+            raise InvalidConversionDeclarationError, 'Currency must be a string'
+        end
+        
+        unless value.is_a?(Numeric)
+            raise InvalidConversionDeclarationError, 'Conversion factor must be a number'
+        end
+    end
+    
     self.base_currency = base_currency
     self.conversion_factors = conversion_factors
   end
@@ -47,7 +69,7 @@ class MGDMoney
   # convert to a different currency, returning a new MGDMoney object.
   # requires both source and destination currency to be defined by
   # MGDMoney.conversion_rates (otherwise rate not known)
-  # @param [String] currency, the desired currency after conversion
+  # @param [String] currency the desired currency after conversion
   # @return [MGDMoney] the new MGDMoney object representing the converted currency
   # @example fifty_eur.convert_to('USD') # => 55.50 USD
   def convert_to(currency)
@@ -101,7 +123,7 @@ class MGDMoney
 
   # convert the given number to its float representation.
   # this makes all the arithmetic possible
-  # @param [Numeric] amount, the amount to convert
+  # @param [Numeric] amount the amount to convert
   # @return [BigDecimal]
   # @example convert_to_float(twenty_dollars.amount)
   def convert_to_float(amount)
@@ -113,7 +135,7 @@ class MGDMoney
   end
 
   # perform arithmetic operations in two different currencies
-  # @param [MGDMoney] other_object, the MGDMoney object we're doing the operation with
+  # @param [MGDMoney] other_object the MGDMoney object we're doing the operation with
   # @return [MGDMoney]
   # @example fifty_eur + twenty_dollars = 68.02 EUR
   # @example fifty_eur / 2 = 25 EUR
@@ -153,7 +175,7 @@ class MGDMoney
 
   # compare different currencies (using Comparable)
   # in this case, we only care about comparing the amounts of each MGDMoney object
-  # @param [MGDMoney] other_object, the object to compare to
+  # @param [MGDMoney] other_object the object to compare to
   # @return [FixNum]
   # @example twenty_dollars == MGDMoney.new(20, 'USD') # => true
   # @example twenty_dollars == MGDMoney.new(30, 'USD') # => false
@@ -162,7 +184,7 @@ class MGDMoney
   def <=>(other_object)
     if other_object.is_a?(MGDMoney)
       other_object = other_object.convert_to(currency)
-      amount <=> other_object.amount
+      convert_to_float(amount) <=> convert_to_float(other_object.amount)                            # convert to float so we're only comparing up to 2 decimal places
     else
       raise UnknownObjectError, 'Unknown destination object type (must be type MGDMoney)'
     end
@@ -177,5 +199,10 @@ class MGDMoney
 
   class UnsupportedOperationError < StandardError
   end
+  
+  class InvalidDeclarationError < StandardError
+  end
+  
+  class InvalidConversionDeclarationError < StandardError
+  end
 end
-

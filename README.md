@@ -1,8 +1,6 @@
 # MgdMoney
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/mgd_money`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+The MGDMoney gem provides a simple interface for converting between currencies 
+and performing operations in different currencies.
 
 ## Installation
 
@@ -22,7 +20,29 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Define the conversion rates between currencies:
+
+    MGDMoney.conversion_rates("USD", { "EUR" => 0.75, "BTC" => 0.0001 })
+    
+You must specify at least one conversion rate or the gem will not know how to perform
+any operations. The gem only supports conversion operations on those specified currencies.
+
+After setting the rates, you can define new MGDMoney objects, which consist of an 
+`amount` and a `currency`:
+
+    twenty_dollars = MGDMoney.new(20, "USD")
+    ten_eur = MGDMoney.new(10, "EUR")
+    
+Convert between currencies:
+
+    twenty_dollars.convert_to("EUR")
+    => 15.00 EUR
+    
+
+Perform arithmetic operations (+, -, *, /) on different currencies
+
+    twenty_dollars + ten_eur
+    => 27.50 USD
 
 ## Development
 
@@ -32,7 +52,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/mgd_money.
+Bug reports and pull requests are welcome on GitHub at https://github.com/davismattg/mgd_money.
 
 ## License
 
